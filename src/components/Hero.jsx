@@ -9,9 +9,11 @@ const { FiTrendingUp, FiUsers, FiStar } = FiIcons;
 const Hero = () => {
   const [content, setContent] = useState({
     title: 'We Are Growing the Team',
-    subtitle: 'Full-time, part-time, twin career or entrepreneurship opportunities in the financial industry'
+    subtitle: 'Full-time, part-time, twin career or entrepreneurship opportunities in the financial industry',
+    background_image: 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2084&q=80',
+    featured_image: ''
   });
-  
+
   useEffect(() => {
     const fetchHeroContent = async () => {
       try {
@@ -20,35 +22,52 @@ const Hero = () => {
           .select('*')
           .eq('section_name', 'hero')
           .single();
-          
-        if (error) throw error;
+
+        if (error) {
+          console.error('Error fetching hero content:', error);
+          return;
+        }
+
         if (data) {
           setContent({
-            title: data.title,
-            subtitle: data.subtitle
+            title: data.title || content.title,
+            subtitle: data.subtitle || content.subtitle,
+            background_image: data.background_image || content.background_image,
+            featured_image: data.featured_image || content.featured_image
           });
         }
       } catch (error) {
         console.error('Error fetching hero content:', error);
       }
     };
-    
+
     fetchHeroContent();
-    
-    // Subscribe to changes
+
+    // Subscribe to real-time changes
     const subscription = supabase
-      .channel('hero_changes')
-      .on('postgres_changes', 
-        { event: 'UPDATE', schema: 'public', table: 'content_sections_xh9s4a', filter: 'section_name=eq.hero' }, 
+      .channel('hero_content_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'content_sections_xh9s4a',
+          filter: 'section_name=eq.hero'
+        },
         (payload) => {
-          setContent({
-            title: payload.new.title,
-            subtitle: payload.new.subtitle
-          });
+          console.log('Hero content updated:', payload);
+          if (payload.new) {
+            setContent(prev => ({
+              title: payload.new.title || prev.title,
+              subtitle: payload.new.subtitle || prev.subtitle,
+              background_image: payload.new.background_image || prev.background_image,
+              featured_image: payload.new.featured_image || prev.featured_image
+            }));
+          }
         }
       )
       .subscribe();
-      
+
     return () => {
       supabase.removeChannel(subscription);
     };
@@ -81,7 +100,7 @@ const Hero = () => {
                 <SafeIcon icon={FiTrendingUp} className="w-5 h-5" />
                 <span className="text-sm font-medium uppercase tracking-wide">Financial Industry Leaders</span>
               </motion.div>
-              
+
               <motion.h1
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -91,7 +110,7 @@ const Hero = () => {
                 {content.title.split(' ').slice(0, -1).join(' ')}{' '}
                 <span className="text-blue-300">{content.title.split(' ').slice(-1)}</span>
               </motion.h1>
-              
+
               <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -142,13 +161,13 @@ const Hero = () => {
           >
             <div className="relative z-10">
               <img
-                src="https://images.unsplash.com/photo-1521737604893-d14cc237f11d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2084&q=80"
+                src={content.background_image}
                 alt="Professional team meeting"
                 className="w-full h-96 lg:h-[500px] object-cover rounded-2xl shadow-2xl"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-blue-900/20 to-transparent rounded-2xl"></div>
             </div>
-            
+
             {/* Floating Stats */}
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}

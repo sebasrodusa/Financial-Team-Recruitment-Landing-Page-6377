@@ -1,4 +1,5 @@
 import React from 'react';
+import Header from '../components/Header';
 import Hero from '../components/Hero';
 import OpportunityTypes from '../components/OpportunityTypes';
 import WhyJoinUs from '../components/WhyJoinUs';
@@ -9,6 +10,7 @@ import Footer from '../components/Footer';
 const LandingPage = () => {
   return (
     <div className="min-h-screen bg-white">
+      <Header />
       <Hero />
       <OpportunityTypes />
       <WhyJoinUs />

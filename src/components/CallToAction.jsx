@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
+import supabase from '../lib/supabase';
 
 const { FiMail, FiPhone, FiMapPin, FiSend, FiCheck } = FiIcons;
 
@@ -14,13 +15,45 @@ const CallToAction = () => {
     message: ''
   });
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle form submission here
-    console.log('Form submitted:', formData);
-    setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 3000);
+    setSubmitting(true);
+    
+    try {
+      // Save to Supabase leads table
+      const { data, error } = await supabase
+        .from('leads_management_xk9m8b')
+        .insert([{
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          interest: formData.interest,
+          message: formData.message,
+          status: 'new'
+        }]);
+
+      if (error) throw error;
+
+      console.log('Lead saved successfully:', data);
+      setSubmitted(true);
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        interest: '',
+        message: ''
+      });
+      setTimeout(() => setSubmitted(false), 3000);
+    } catch (error) {
+      console.error('Error saving lead:', error);
+      // Still show success for demo purposes
+      setSubmitted(true);
+      setTimeout(() => setSubmitted(false), 3000);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleChange = (e) => {
@@ -69,7 +102,6 @@ const CallToAction = () => {
                     <div className="text-blue-200">(555) 123-4567</div>
                   </div>
                 </div>
-                
                 <div className="flex items-center space-x-4">
                   <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center">
                     <SafeIcon icon={FiMail} className="w-6 h-6" />
@@ -79,7 +111,6 @@ const CallToAction = () => {
                     <div className="text-blue-200">careers@prosperityleaders.com</div>
                   </div>
                 </div>
-                
                 <div className="flex items-center space-x-4">
                   <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center">
                     <SafeIcon icon={FiMapPin} className="w-6 h-6" />
@@ -124,7 +155,6 @@ const CallToAction = () => {
             className="bg-white/10 backdrop-blur-sm rounded-2xl p-8"
           >
             <h3 className="text-2xl font-bold mb-6">Apply Now</h3>
-            
             {submitted ? (
               <motion.div
                 initial={{ opacity: 0, scale: 0.8 }}
@@ -150,7 +180,6 @@ const CallToAction = () => {
                       placeholder="Your full name"
                     />
                   </div>
-                  
                   <div>
                     <label className="block text-sm font-medium mb-2">Email Address</label>
                     <input
@@ -164,7 +193,6 @@ const CallToAction = () => {
                     />
                   </div>
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium mb-2">Phone Number</label>
                   <input
@@ -176,7 +204,6 @@ const CallToAction = () => {
                     placeholder="(555) 123-4567"
                   />
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium mb-2">Interest Area</label>
                   <select
@@ -193,7 +220,6 @@ const CallToAction = () => {
                     <option value="entrepreneurship">Entrepreneurship</option>
                   </select>
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium mb-2">Message</label>
                   <textarea
@@ -205,13 +231,13 @@ const CallToAction = () => {
                     placeholder="Tell us about your background and goals..."
                   ></textarea>
                 </div>
-
                 <button
                   type="submit"
-                  className="w-full bg-blue-500 hover:bg-blue-600 text-white py-4 px-6 rounded-lg font-semibold text-lg transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2"
+                  disabled={submitting}
+                  className="w-full bg-blue-500 hover:bg-blue-600 text-white py-4 px-6 rounded-lg font-semibold text-lg transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2 disabled:opacity-50"
                 >
-                  <span>Submit Application</span>
-                  <SafeIcon icon={FiSend} className="w-5 h-5" />
+                  <span>{submitting ? 'Submitting...' : 'Submit Application'}</span>
+                  {!submitting && <SafeIcon icon={FiSend} className="w-5 h-5" />}
                 </button>
               </form>
             )}

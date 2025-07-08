@@ -7,283 +7,94 @@ import { clearMockSession } from '../lib/authUtils';
 import { useAuth } from '../lib/authComponents';
 import SafeIcon from '../common/SafeIcon';
 
-const { FiEdit2, FiSave, FiX, FiLogOut, FiHome, FiPlusCircle, FiTrash2 } = FiIcons;
+const { FiEdit2, FiSave, FiX, FiLogOut, FiHome, FiPlusCircle, FiTrash2, FiSettings, FiUsers, FiFileText, FiImage, FiUpload } = FiIcons;
 
 const AdminDashboard = () => {
   const { session, loading } = useAuth();
+  const [activeTab, setActiveTab] = useState('content');
   const [sections, setSections] = useState([]);
   const [activeSectionId, setActiveSectionId] = useState(null);
   const [sectionItems, setSectionItems] = useState([]);
   const [editingSection, setEditingSection] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
   const [newItem, setNewItem] = useState(null);
+  const [leads, setLeads] = useState([]);
+  const [siteSettings, setSiteSettings] = useState({});
+  const [editingSettings, setEditingSettings] = useState(false);
 
   useEffect(() => {
     if (session) {
       fetchSections();
+      fetchLeads();
+      fetchSiteSettings();
     }
   }, [session]);
 
   const fetchSections = async () => {
     try {
-      // For demo, create dummy sections if needed
-      const mockSections = [
-        {
-          id: '1',
-          section_name: 'hero',
-          title: 'We Are Growing the Team',
-          subtitle: 'Full-time, part-time, twin career or entrepreneurship opportunities in the financial industry'
-        },
-        {
-          id: '2',
-          section_name: 'opportunities',
-          title: 'Choose Your Path to Success',
-          subtitle: 'We offer diverse opportunities to match your lifestyle and career goals in the financial industry'
-        },
-        {
-          id: '3',
-          section_name: 'benefits',
-          title: 'Why Choose Prosperity Leaders?',
-          subtitle: 'Join a team that values growth, integrity, and success'
-        },
-        {
-          id: '4',
-          section_name: 'leadership',
-          title: 'Meet Your Leader',
-          subtitle: 'Led by industry expert Jenny Rodriguez-Minchala, our team is committed to your success'
-        }
-      ];
-
-      // Try to get real data first
       const { data, error } = await supabase
         .from('content_sections_xh9s4a')
         .select('*')
         .order('section_name');
 
-      // Use mock data if error or no data
-      if (error || !data || data.length === 0) {
-        setSections(mockSections);
-        if (mockSections.length > 0) {
-          setActiveSectionId(mockSections[0].id);
-          fetchSectionItems(mockSections[0].id);
-        }
-      } else {
+      if (error) throw error;
+
+      if (data && data.length > 0) {
         setSections(data);
-        if (data.length > 0) {
-          setActiveSectionId(data[0].id);
-          fetchSectionItems(data[0].id);
-        }
+        setActiveSectionId(data[0].id);
+        fetchSectionItems(data[0].id);
       }
     } catch (error) {
       console.error('Error fetching sections:', error);
-      // Fallback to mock data
-      const mockSections = [
-        {
-          id: '1',
-          section_name: 'hero',
-          title: 'We Are Growing the Team',
-          subtitle: 'Full-time, part-time, twin career or entrepreneurship opportunities in the financial industry'
-        },
-        {
-          id: '2',
-          section_name: 'opportunities',
-          title: 'Choose Your Path to Success',
-          subtitle: 'We offer diverse opportunities to match your lifestyle and career goals in the financial industry'
-        },
-        {
-          id: '3',
-          section_name: 'benefits',
-          title: 'Why Choose Prosperity Leaders?',
-          subtitle: 'Join a team that values growth, integrity, and success'
-        },
-        {
-          id: '4',
-          section_name: 'leadership',
-          title: 'Meet Your Leader',
-          subtitle: 'Led by industry expert Jenny Rodriguez-Minchala, our team is committed to your success'
-        }
-      ];
-      setSections(mockSections);
-      if (mockSections.length > 0) {
-        setActiveSectionId(mockSections[0].id);
-        fetchSectionItems(mockSections[0].id);
-      }
     }
   };
 
   const fetchSectionItems = async (sectionId) => {
     try {
-      // Mock items for demonstration
-      const mockItems = {
-        '1': [], // Hero doesn't have items
-        '2': [ // Opportunities
-          {
-            id: '21',
-            section_id: '2',
-            title: 'Full-Time Positions',
-            description: 'Dedicated career paths with comprehensive benefits and growth opportunities in the financial sector.',
-            icon_name: 'Clock',
-            order_index: 1
-          },
-          {
-            id: '22',
-            section_id: '2',
-            title: 'Part-Time Flexibility',
-            description: 'Balance your life while building a rewarding career in financial services with flexible scheduling.',
-            icon_name: 'Calendar',
-            order_index: 2
-          },
-          {
-            id: '23',
-            section_id: '2',
-            title: 'Twin Career Path',
-            description: 'Perfect for couples or partners looking to build complementary careers in the financial industry.',
-            icon_name: 'Users',
-            order_index: 3
-          },
-          {
-            id: '24',
-            section_id: '2',
-            title: 'Entrepreneurship',
-            description: 'Launch your own financial services business with our proven systems and ongoing support.',
-            icon_name: 'TrendingUp',
-            order_index: 4
-          }
-        ],
-        '3': [ // Benefits
-          {
-            id: '31',
-            section_id: '3',
-            title: 'Industry Recognition',
-            description: 'Join a team recognized for excellence in financial services and client satisfaction.',
-            icon_name: 'Award',
-            order_index: 1
-          },
-          {
-            id: '32',
-            section_id: '3',
-            title: 'Clear Growth Path',
-            description: 'Well-defined career progression with mentorship and leadership development programs.',
-            icon_name: 'Target',
-            order_index: 2
-          },
-          {
-            id: '33',
-            section_id: '3',
-            title: 'Supportive Culture',
-            description: 'Work in an environment that values collaboration, integrity, and personal growth.',
-            icon_name: 'Heart',
-            order_index: 3
-          },
-          {
-            id: '34',
-            section_id: '3',
-            title: 'Comprehensive Benefits',
-            description: 'Health insurance, retirement planning, and financial protection for you and your family.',
-            icon_name: 'Shield',
-            order_index: 4
-          },
-          {
-            id: '35',
-            section_id: '3',
-            title: 'Continuous Learning',
-            description: 'Access to industry training, certifications, and professional development resources.',
-            icon_name: 'BookOpen',
-            order_index: 5
-          },
-          {
-            id: '36',
-            section_id: '3',
-            title: 'Competitive Compensation',
-            description: 'Attractive base salary plus performance-based incentives and bonuses.',
-            icon_name: 'DollarSign',
-            order_index: 6
-          }
-        ],
-        '4': [] // Leadership doesn't have items
-      };
-
-      // Try to get real data first
       const { data, error } = await supabase
         .from('section_items_xh9s4a')
         .select('*')
         .eq('section_id', sectionId)
         .order('order_index');
 
-      // Use mock data if error or no data
-      if (error || !data || data.length === 0) {
-        setSectionItems(mockItems[sectionId] || []);
-      } else {
-        setSectionItems(data);
-      }
+      if (error) throw error;
+      setSectionItems(data || []);
     } catch (error) {
       console.error('Error fetching section items:', error);
-      // Fallback to mock data
-      const mockItems = {
-        '1': [], // Hero doesn't have items
-        '2': [ // Opportunities
-          {
-            id: '21',
-            section_id: '2',
-            title: 'Full-Time Positions',
-            description: 'Dedicated career paths with comprehensive benefits and growth opportunities in the financial sector.',
-            icon_name: 'Clock',
-            order_index: 1
-          },
-          {
-            id: '22',
-            section_id: '2',
-            title: 'Part-Time Flexibility',
-            description: 'Balance your life while building a rewarding career in financial services with flexible scheduling.',
-            icon_name: 'Calendar',
-            order_index: 2
-          },
-          {
-            id: '23',
-            section_id: '2',
-            title: 'Twin Career Path',
-            description: 'Perfect for couples or partners looking to build complementary careers in the financial industry.',
-            icon_name: 'Users',
-            order_index: 3
-          },
-          {
-            id: '24',
-            section_id: '2',
-            title: 'Entrepreneurship',
-            description: 'Launch your own financial services business with our proven systems and ongoing support.',
-            icon_name: 'TrendingUp',
-            order_index: 4
-          }
-        ],
-        '3': [ // Benefits
-          {
-            id: '31',
-            section_id: '3',
-            title: 'Industry Recognition',
-            description: 'Join a team recognized for excellence in financial services and client satisfaction.',
-            icon_name: 'Award',
-            order_index: 1
-          },
-          {
-            id: '32',
-            section_id: '3',
-            title: 'Clear Growth Path',
-            description: 'Well-defined career progression with mentorship and leadership development programs.',
-            icon_name: 'Target',
-            order_index: 2
-          },
-          {
-            id: '33',
-            section_id: '3',
-            title: 'Supportive Culture',
-            description: 'Work in an environment that values collaboration, integrity, and personal growth.',
-            icon_name: 'Heart',
-            order_index: 3
-          }
-        ],
-        '4': [] // Leadership doesn't have items
-      };
-      setSectionItems(mockItems[sectionId] || []);
+      setSectionItems([]);
+    }
+  };
+
+  const fetchLeads = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('leads_management_xk9m8b')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setLeads(data || []);
+    } catch (error) {
+      console.error('Error fetching leads:', error);
+      setLeads([]);
+    }
+  };
+
+  const fetchSiteSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('site_settings_xk9m8b')
+        .select('*');
+
+      if (error) throw error;
+      
+      const settings = {};
+      data.forEach(setting => {
+        settings[setting.setting_key] = setting.setting_value;
+      });
+      setSiteSettings(settings);
+    } catch (error) {
+      console.error('Error fetching site settings:', error);
     }
   };
 
@@ -301,34 +112,23 @@ const AdminDashboard = () => {
 
   const handleSaveSectionEdit = async () => {
     try {
-      // For mock session, just update local state
-      if (localStorage.getItem('mockAdminSession')) {
-        // Update local state
-        setSections(sections.map(s => s.id === editingSection.id ? editingSection : s));
-        setEditingSection(null);
-        return;
-      }
-
-      // For real Supabase session
       const { error } = await supabase
         .from('content_sections_xh9s4a')
         .update({
           title: editingSection.title,
           subtitle: editingSection.subtitle,
+          background_image: editingSection.background_image,
+          featured_image: editingSection.featured_image,
           updated_at: new Date()
         })
         .eq('id', editingSection.id);
 
       if (error) throw error;
 
-      // Update local state
       setSections(sections.map(s => s.id === editingSection.id ? editingSection : s));
       setEditingSection(null);
     } catch (error) {
       console.error('Error updating section:', error);
-      // For demo, still update the UI
-      setSections(sections.map(s => s.id === editingSection.id ? editingSection : s));
-      setEditingSection(null);
     }
   };
 
@@ -339,14 +139,6 @@ const AdminDashboard = () => {
 
   const handleSaveItemEdit = async () => {
     try {
-      // For mock session, just update local state
-      if (localStorage.getItem('mockAdminSession')) {
-        setSectionItems(sectionItems.map(i => i.id === editingItem.id ? editingItem : i));
-        setEditingItem(null);
-        return;
-      }
-
-      // For real Supabase session
       const { error } = await supabase
         .from('section_items_xh9s4a')
         .update({
@@ -360,20 +152,16 @@ const AdminDashboard = () => {
 
       if (error) throw error;
 
-      // Update local state
       setSectionItems(sectionItems.map(i => i.id === editingItem.id ? editingItem : i));
       setEditingItem(null);
     } catch (error) {
       console.error('Error updating item:', error);
-      // For demo, still update the UI
-      setSectionItems(sectionItems.map(i => i.id === editingItem.id ? editingItem : i));
-      setEditingItem(null);
     }
   };
 
   const handleAddNewItem = () => {
     setNewItem({
-      id: `new-${Date.now()}`, // Temporary ID for mock mode
+      id: `new-${Date.now()}`,
       title: '',
       description: '',
       icon_name: '',
@@ -386,29 +174,24 @@ const AdminDashboard = () => {
 
   const handleSaveNewItem = async () => {
     try {
-      // For mock session, just update local state
-      if (localStorage.getItem('mockAdminSession')) {
-        setSectionItems([...sectionItems, newItem]);
-        setNewItem(null);
-        return;
-      }
-
-      // For real Supabase session
       const { data, error } = await supabase
         .from('section_items_xh9s4a')
-        .insert(newItem)
+        .insert({
+          section_id: activeSectionId,
+          title: newItem.title,
+          description: newItem.description,
+          icon_name: newItem.icon_name,
+          image_url: newItem.image_url,
+          order_index: newItem.order_index
+        })
         .select();
 
       if (error) throw error;
 
-      // Update local state
       setSectionItems([...sectionItems, data[0]]);
       setNewItem(null);
     } catch (error) {
       console.error('Error adding new item:', error);
-      // For demo, still update the UI
-      setSectionItems([...sectionItems, newItem]);
-      setNewItem(null);
     }
   };
 
@@ -416,13 +199,6 @@ const AdminDashboard = () => {
     if (!confirm('Are you sure you want to delete this item?')) return;
 
     try {
-      // For mock session, just update local state
-      if (localStorage.getItem('mockAdminSession')) {
-        setSectionItems(sectionItems.filter(i => i.id !== itemId));
-        return;
-      }
-
-      // For real Supabase session
       const { error } = await supabase
         .from('section_items_xh9s4a')
         .delete()
@@ -430,20 +206,65 @@ const AdminDashboard = () => {
 
       if (error) throw error;
 
-      // Update local state
       setSectionItems(sectionItems.filter(i => i.id !== itemId));
     } catch (error) {
       console.error('Error deleting item:', error);
-      // For demo, still update the UI
-      setSectionItems(sectionItems.filter(i => i.id !== itemId));
+    }
+  };
+
+  const handleUpdateLeadStatus = async (leadId, newStatus) => {
+    try {
+      const { error } = await supabase
+        .from('leads_management_xk9m8b')
+        .update({ status: newStatus, updated_at: new Date() })
+        .eq('id', leadId);
+
+      if (error) throw error;
+
+      setLeads(leads.map(lead => 
+        lead.id === leadId ? { ...lead, status: newStatus } : lead
+      ));
+    } catch (error) {
+      console.error('Error updating lead status:', error);
+    }
+  };
+
+  const handleDeleteLead = async (leadId) => {
+    if (!confirm('Are you sure you want to delete this lead?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('leads_management_xk9m8b')
+        .delete()
+        .eq('id', leadId);
+
+      if (error) throw error;
+
+      setLeads(leads.filter(lead => lead.id !== leadId));
+    } catch (error) {
+      console.error('Error deleting lead:', error);
+    }
+  };
+
+  const handleUpdateSiteSettings = async () => {
+    try {
+      for (const [key, value] of Object.entries(siteSettings)) {
+        await supabase
+          .from('site_settings_xk9m8b')
+          .upsert({
+            setting_key: key,
+            setting_value: value,
+            updated_at: new Date()
+          });
+      }
+      setEditingSettings(false);
+    } catch (error) {
+      console.error('Error updating site settings:', error);
     }
   };
 
   const handleLogout = async () => {
-    // Clear mock session if exists
     clearMockSession();
-    
-    // Also sign out from Supabase
     await supabase.auth.signOut();
   };
 
@@ -460,6 +281,12 @@ const AdminDashboard = () => {
   }
 
   const activeSection = sections.find(s => s.id === activeSectionId);
+  const statusColors = {
+    new: 'bg-blue-100 text-blue-800',
+    contacted: 'bg-yellow-100 text-yellow-800',
+    qualified: 'bg-green-100 text-green-800',
+    closed: 'bg-gray-100 text-gray-800'
+  };
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -484,278 +311,559 @@ const AdminDashboard = () => {
       </header>
 
       <div className="container mx-auto p-4 md:p-6 lg:p-8">
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-          <div className="md:flex">
-            {/* Sidebar */}
-            <div className="md:w-1/4 bg-gray-50 p-4 border-r border-gray-200">
-              <h2 className="text-xl font-semibold mb-4">Content Sections</h2>
-              <ul className="space-y-2">
-                {sections.map(section => (
-                  <li key={section.id}>
-                    <button
-                      onClick={() => handleSectionClick(section.id)}
-                      className={`w-full text-left px-4 py-2 rounded ${
-                        activeSectionId === section.id
-                          ? 'bg-blue-100 text-blue-700 font-medium'
-                          : 'hover:bg-gray-100'
-                      }`}
-                    >
-                      {section.section_name.charAt(0).toUpperCase() + section.section_name.slice(1)}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
+        {/* Tab Navigation */}
+        <div className="mb-8">
+          <nav className="flex space-x-8">
+            <button
+              onClick={() => setActiveTab('content')}
+              className={`pb-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'content'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <SafeIcon icon={FiFileText} className="w-4 h-4 inline mr-2" />
+              Content Management
+            </button>
+            <button
+              onClick={() => setActiveTab('leads')}
+              className={`pb-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'leads'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <SafeIcon icon={FiUsers} className="w-4 h-4 inline mr-2" />
+              Leads Management
+            </button>
+            <button
+              onClick={() => setActiveTab('settings')}
+              className={`pb-2 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'settings'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <SafeIcon icon={FiSettings} className="w-4 h-4 inline mr-2" />
+              Site Settings
+            </button>
+          </nav>
+        </div>
 
-            {/* Main Content */}
-            <div className="md:w-3/4 p-6">
-              {activeSection && (
-                <>
-                  <div className="flex justify-between items-center mb-6">
-                    <div>
-                      {editingSection ? (
-                        <div className="space-y-3">
-                          <input
-                            type="text"
-                            value={editingSection.title}
-                            onChange={(e) => setEditingSection({ ...editingSection, title: e.target.value })}
-                            className="block w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-xl font-bold"
-                          />
-                          <textarea
-                            value={editingSection.subtitle || ''}
-                            onChange={(e) => setEditingSection({ ...editingSection, subtitle: e.target.value })}
-                            className="block w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                            rows="2"
-                          ></textarea>
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={handleSaveSectionEdit}
-                              className="flex items-center space-x-1 bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded"
-                            >
-                              <SafeIcon icon={FiSave} className="w-4 h-4" />
-                              <span>Save</span>
-                            </button>
-                            <button
-                              onClick={() => setEditingSection(null)}
-                              className="flex items-center space-x-1 bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded"
-                            >
-                              <SafeIcon icon={FiX} className="w-4 h-4" />
-                              <span>Cancel</span>
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div>
-                          <h2 className="text-2xl font-bold text-gray-800">{activeSection.title}</h2>
-                          <p className="text-gray-600">{activeSection.subtitle}</p>
-                        </div>
-                      )}
-                    </div>
-                    {!editingSection && (
+        {/* Content Management Tab */}
+        {activeTab === 'content' && (
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div className="md:flex">
+              {/* Sidebar */}
+              <div className="md:w-1/4 bg-gray-50 p-4 border-r border-gray-200">
+                <h2 className="text-xl font-semibold mb-4">Content Sections</h2>
+                <ul className="space-y-2">
+                  {sections.map(section => (
+                    <li key={section.id}>
                       <button
-                        onClick={() => handleEditSection(activeSection)}
-                        className="flex items-center space-x-1 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded"
+                        onClick={() => handleSectionClick(section.id)}
+                        className={`w-full text-left px-4 py-2 rounded ${
+                          activeSectionId === section.id
+                            ? 'bg-blue-100 text-blue-700 font-medium'
+                            : 'hover:bg-gray-100'
+                        }`}
                       >
-                        <SafeIcon icon={FiEdit2} className="w-4 h-4" />
-                        <span>Edit Section</span>
+                        {section.section_name.charAt(0).toUpperCase() + section.section_name.slice(1)}
                       </button>
-                    )}
-                  </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
 
-                  {/* Section Items */}
-                  <div className="mb-6">
-                    <div className="flex justify-between items-center mb-4">
-                      <h3 className="text-lg font-semibold">Content Items</h3>
-                      <button
-                        onClick={handleAddNewItem}
-                        className="flex items-center space-x-1 bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded"
-                      >
-                        <SafeIcon icon={FiPlusCircle} className="w-4 h-4" />
-                        <span>Add New Item</span>
-                      </button>
-                    </div>
-
-                    {/* New Item Form */}
-                    {newItem && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="bg-blue-50 p-4 rounded-md mb-6 border border-blue-200"
-                      >
-                        <h4 className="text-lg font-medium mb-3">Add New Item</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                          <div>
-                            <label className="block text-sm font-medium mb-1">Title</label>
+              {/* Main Content */}
+              <div className="md:w-3/4 p-6">
+                {activeSection && (
+                  <>
+                    <div className="flex justify-between items-center mb-6">
+                      <div className="flex-1">
+                        {editingSection ? (
+                          <div className="space-y-3">
                             <input
                               type="text"
-                              value={newItem.title}
-                              onChange={(e) => setNewItem({ ...newItem, title: e.target.value })}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                              value={editingSection.title}
+                              onChange={(e) => setEditingSection({ ...editingSection, title: e.target.value })}
+                              className="block w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-xl font-bold"
                             />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium mb-1">Icon Name (e.g. Award, Clock)</label>
-                            <input
-                              type="text"
-                              value={newItem.icon_name}
-                              onChange={(e) => setNewItem({ ...newItem, icon_name: e.target.value })}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                            />
-                          </div>
-                          <div className="md:col-span-2">
-                            <label className="block text-sm font-medium mb-1">Description</label>
                             <textarea
-                              value={newItem.description || ''}
-                              onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                              rows="3"
+                              value={editingSection.subtitle || ''}
+                              onChange={(e) => setEditingSection({ ...editingSection, subtitle: e.target.value })}
+                              className="block w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                              rows="2"
                             ></textarea>
-                          </div>
-                          <div className="md:col-span-2">
-                            <label className="block text-sm font-medium mb-1">Image URL (optional)</label>
-                            <input
-                              type="text"
-                              value={newItem.image_url || ''}
-                              onChange={(e) => setNewItem({ ...newItem, image_url: e.target.value })}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                            />
-                          </div>
-                        </div>
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={handleSaveNewItem}
-                            className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded"
-                          >
-                            Save New Item
-                          </button>
-                          <button
-                            onClick={() => setNewItem(null)}
-                            className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </motion.div>
-                    )}
-
-                    {/* Items List */}
-                    <div className="space-y-4">
-                      {sectionItems.length === 0 ? (
-                        <p className="text-gray-500 italic">No items found for this section.</p>
-                      ) : (
-                        sectionItems.map(item => (
-                          <div
-                            key={item.id}
-                            className="border border-gray-200 rounded-md p-4 hover:shadow-md transition-shadow"
-                          >
-                            {editingItem && editingItem.id === item.id ? (
-                              <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                className="space-y-3"
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-sm font-medium mb-1">Background Image URL</label>
+                                <input
+                                  type="url"
+                                  value={editingSection.background_image || ''}
+                                  onChange={(e) => setEditingSection({ ...editingSection, background_image: e.target.value })}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder="https://example.com/image.jpg"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium mb-1">Featured Image URL</label>
+                                <input
+                                  type="url"
+                                  value={editingSection.featured_image || ''}
+                                  onChange={(e) => setEditingSection({ ...editingSection, featured_image: e.target.value })}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                  placeholder="https://example.com/image.jpg"
+                                />
+                              </div>
+                            </div>
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={handleSaveSectionEdit}
+                                className="flex items-center space-x-1 bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded"
                               >
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                  <div>
-                                    <label className="block text-sm font-medium mb-1">Title</label>
-                                    <input
-                                      type="text"
-                                      value={editingItem.title || ''}
-                                      onChange={(e) => setEditingItem({ ...editingItem, title: e.target.value })}
-                                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                                    />
-                                  </div>
-                                  <div>
-                                    <label className="block text-sm font-medium mb-1">Icon Name</label>
-                                    <input
-                                      type="text"
-                                      value={editingItem.icon_name || ''}
-                                      onChange={(e) => setEditingItem({ ...editingItem, icon_name: e.target.value })}
-                                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                                    />
-                                  </div>
-                                  <div className="md:col-span-2">
-                                    <label className="block text-sm font-medium mb-1">Description</label>
-                                    <textarea
-                                      value={editingItem.description || ''}
-                                      onChange={(e) => setEditingItem({ ...editingItem, description: e.target.value })}
-                                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                                      rows="3"
-                                    ></textarea>
-                                  </div>
-                                  <div className="md:col-span-2">
-                                    <label className="block text-sm font-medium mb-1">Image URL</label>
-                                    <input
-                                      type="text"
-                                      value={editingItem.image_url || ''}
-                                      onChange={(e) => setEditingItem({ ...editingItem, image_url: e.target.value })}
-                                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                                    />
-                                  </div>
-                                </div>
-                                <div className="flex space-x-2">
-                                  <button
-                                    onClick={handleSaveItemEdit}
-                                    className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded flex items-center space-x-1"
-                                  >
-                                    <SafeIcon icon={FiSave} className="w-4 h-4" />
-                                    <span>Save</span>
-                                  </button>
-                                  <button
-                                    onClick={() => setEditingItem(null)}
-                                    className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded flex items-center space-x-1"
-                                  >
-                                    <SafeIcon icon={FiX} className="w-4 h-4" />
-                                    <span>Cancel</span>
-                                  </button>
-                                </div>
-                              </motion.div>
-                            ) : (
-                              <div className="flex justify-between items-start">
-                                <div>
-                                  <div className="flex items-center space-x-2 mb-1">
-                                    {item.icon_name && (
-                                      <div className="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
-                                        <SafeIcon name={item.icon_name} className="w-4 h-4" />
-                                      </div>
-                                    )}
-                                    <h4 className="font-medium">{item.title}</h4>
-                                  </div>
-                                  <p className="text-gray-600 text-sm">{item.description}</p>
-                                  {item.image_url && (
-                                    <div className="mt-2">
-                                      <span className="text-xs text-gray-500">Image: </span>
-                                      <span className="text-xs text-blue-500">{item.image_url}</span>
-                                    </div>
-                                  )}
-                                </div>
-                                <div className="flex space-x-1">
-                                  <button
-                                    onClick={() => handleEditItem(item)}
-                                    className="text-blue-600 hover:text-blue-800 p-1"
-                                    title="Edit"
-                                  >
-                                    <SafeIcon icon={FiEdit2} className="w-5 h-5" />
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeleteItem(item.id)}
-                                    className="text-red-600 hover:text-red-800 p-1"
-                                    title="Delete"
-                                  >
-                                    <SafeIcon icon={FiTrash2} className="w-5 h-5" />
-                                  </button>
-                                </div>
+                                <SafeIcon icon={FiSave} className="w-4 h-4" />
+                                <span>Save</span>
+                              </button>
+                              <button
+                                onClick={() => setEditingSection(null)}
+                                className="flex items-center space-x-1 bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded"
+                              >
+                                <SafeIcon icon={FiX} className="w-4 h-4" />
+                                <span>Cancel</span>
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            <h2 className="text-2xl font-bold text-gray-800">{activeSection.title}</h2>
+                            <p className="text-gray-600 mb-4">{activeSection.subtitle}</p>
+                            {activeSection.background_image && (
+                              <div className="mb-2">
+                                <span className="text-sm text-gray-500">Background Image: </span>
+                                <span className="text-sm text-blue-600">{activeSection.background_image}</span>
+                              </div>
+                            )}
+                            {activeSection.featured_image && (
+                              <div className="mb-2">
+                                <span className="text-sm text-gray-500">Featured Image: </span>
+                                <span className="text-sm text-blue-600">{activeSection.featured_image}</span>
                               </div>
                             )}
                           </div>
-                        ))
+                        )}
+                      </div>
+                      {!editingSection && (
+                        <button
+                          onClick={() => handleEditSection(activeSection)}
+                          className="flex items-center space-x-1 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded"
+                        >
+                          <SafeIcon icon={FiEdit2} className="w-4 h-4" />
+                          <span>Edit Section</span>
+                        </button>
                       )}
                     </div>
-                  </div>
-                </>
+
+                    {/* Section Items */}
+                    <div className="mb-6">
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-semibold">Content Items</h3>
+                        <button
+                          onClick={handleAddNewItem}
+                          className="flex items-center space-x-1 bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded"
+                        >
+                          <SafeIcon icon={FiPlusCircle} className="w-4 h-4" />
+                          <span>Add New Item</span>
+                        </button>
+                      </div>
+
+                      {/* New Item Form */}
+                      {newItem && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="bg-blue-50 p-4 rounded-md mb-6 border border-blue-200"
+                        >
+                          <h4 className="text-lg font-medium mb-3">Add New Item</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                              <label className="block text-sm font-medium mb-1">Title</label>
+                              <input
+                                type="text"
+                                value={newItem.title}
+                                onChange={(e) => setNewItem({ ...newItem, title: e.target.value })}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium mb-1">Icon Name (e.g. Award, Clock)</label>
+                              <input
+                                type="text"
+                                value={newItem.icon_name}
+                                onChange={(e) => setNewItem({ ...newItem, icon_name: e.target.value })}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                              />
+                            </div>
+                            <div className="md:col-span-2">
+                              <label className="block text-sm font-medium mb-1">Description</label>
+                              <textarea
+                                value={newItem.description || ''}
+                                onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                rows="3"
+                              ></textarea>
+                            </div>
+                            <div className="md:col-span-2">
+                              <label className="block text-sm font-medium mb-1">Image URL (optional)</label>
+                              <input
+                                type="url"
+                                value={newItem.image_url || ''}
+                                onChange={(e) => setNewItem({ ...newItem, image_url: e.target.value })}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                              />
+                            </div>
+                          </div>
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={handleSaveNewItem}
+                              className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded"
+                            >
+                              Save New Item
+                            </button>
+                            <button
+                              onClick={() => setNewItem(null)}
+                              className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
+
+                      {/* Items List */}
+                      <div className="space-y-4">
+                        {sectionItems.length === 0 ? (
+                          <p className="text-gray-500 italic">No items found for this section.</p>
+                        ) : (
+                          sectionItems.map(item => (
+                            <div key={item.id} className="border border-gray-200 rounded-md p-4 hover:shadow-md transition-shadow">
+                              {editingItem && editingItem.id === item.id ? (
+                                <motion.div
+                                  initial={{ opacity: 0 }}
+                                  animate={{ opacity: 1 }}
+                                  className="space-y-3"
+                                >
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                      <label className="block text-sm font-medium mb-1">Title</label>
+                                      <input
+                                        type="text"
+                                        value={editingItem.title || ''}
+                                        onChange={(e) => setEditingItem({ ...editingItem, title: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-sm font-medium mb-1">Icon Name</label>
+                                      <input
+                                        type="text"
+                                        value={editingItem.icon_name || ''}
+                                        onChange={(e) => setEditingItem({ ...editingItem, icon_name: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                      />
+                                    </div>
+                                    <div className="md:col-span-2">
+                                      <label className="block text-sm font-medium mb-1">Description</label>
+                                      <textarea
+                                        value={editingItem.description || ''}
+                                        onChange={(e) => setEditingItem({ ...editingItem, description: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                        rows="3"
+                                      ></textarea>
+                                    </div>
+                                    <div className="md:col-span-2">
+                                      <label className="block text-sm font-medium mb-1">Image URL</label>
+                                      <input
+                                        type="url"
+                                        value={editingItem.image_url || ''}
+                                        onChange={(e) => setEditingItem({ ...editingItem, image_url: e.target.value })}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                                      />
+                                    </div>
+                                  </div>
+                                  <div className="flex space-x-2">
+                                    <button
+                                      onClick={handleSaveItemEdit}
+                                      className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded flex items-center space-x-1"
+                                    >
+                                      <SafeIcon icon={FiSave} className="w-4 h-4" />
+                                      <span>Save</span>
+                                    </button>
+                                    <button
+                                      onClick={() => setEditingItem(null)}
+                                      className="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded flex items-center space-x-1"
+                                    >
+                                      <SafeIcon icon={FiX} className="w-4 h-4" />
+                                      <span>Cancel</span>
+                                    </button>
+                                  </div>
+                                </motion.div>
+                              ) : (
+                                <div className="flex justify-between items-start">
+                                  <div>
+                                    <div className="flex items-center space-x-2 mb-1">
+                                      {item.icon_name && (
+                                        <div className="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
+                                          <SafeIcon name={item.icon_name} className="w-4 h-4" />
+                                        </div>
+                                      )}
+                                      <h4 className="font-medium">{item.title}</h4>
+                                    </div>
+                                    <p className="text-gray-600 text-sm">{item.description}</p>
+                                    {item.image_url && (
+                                      <div className="mt-2">
+                                        <span className="text-xs text-gray-500">Image: </span>
+                                        <span className="text-xs text-blue-500">{item.image_url}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="flex space-x-1">
+                                    <button
+                                      onClick={() => handleEditItem(item)}
+                                      className="text-blue-600 hover:text-blue-800 p-1"
+                                      title="Edit"
+                                    >
+                                      <SafeIcon icon={FiEdit2} className="w-5 h-5" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteItem(item.id)}
+                                      className="text-red-600 hover:text-red-800 p-1"
+                                      title="Delete"
+                                    >
+                                      <SafeIcon icon={FiTrash2} className="w-5 h-5" />
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Leads Management Tab */}
+        {activeTab === 'leads' && (
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-800">Leads Management</h2>
+                <div className="text-sm text-gray-500">
+                  Total Leads: {leads.length}
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Name
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Email
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Phone
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Interest
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Date
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {leads.map(lead => (
+                      <tr key={lead.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">{lead.name}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{lead.email}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{lead.phone || 'N/A'}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{lead.interest}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <select
+                            value={lead.status}
+                            onChange={(e) => handleUpdateLeadStatus(lead.id, e.target.value)}
+                            className={`text-xs px-2 py-1 rounded-full ${statusColors[lead.status] || 'bg-gray-100 text-gray-800'}`}
+                          >
+                            <option value="new">New</option>
+                            <option value="contacted">Contacted</option>
+                            <option value="qualified">Qualified</option>
+                            <option value="closed">Closed</option>
+                          </select>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {new Date(lead.created_at).toLocaleDateString()}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <button
+                            onClick={() => handleDeleteLead(lead.id)}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            <SafeIcon icon={FiTrash2} className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {leads.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  No leads found. Lead submissions will appear here.
+                </div>
               )}
             </div>
           </div>
-        </div>
+        )}
+
+        {/* Site Settings Tab */}
+        {activeTab === 'settings' && (
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-800">Site Settings</h2>
+                {editingSettings ? (
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={handleUpdateSiteSettings}
+                      className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded flex items-center space-x-1"
+                    >
+                      <SafeIcon icon={FiSave} className="w-4 h-4" />
+                      <span>Save Changes</span>
+                    </button>
+                    <button
+                      onClick={() => setEditingSettings(false)}
+                      className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded flex items-center space-x-1"
+                    >
+                      <SafeIcon icon={FiX} className="w-4 h-4" />
+                      <span>Cancel</span>
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setEditingSettings(true)}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded flex items-center space-x-1"
+                  >
+                    <SafeIcon icon={FiEdit2} className="w-4 h-4" />
+                    <span>Edit Settings</span>
+                  </button>
+                )}
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Company Name
+                  </label>
+                  <input
+                    type="text"
+                    value={siteSettings.company_name || ''}
+                    onChange={(e) => setSiteSettings({ ...siteSettings, company_name: e.target.value })}
+                    disabled={!editingSettings}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <SafeIcon icon={FiImage} className="w-4 h-4 inline mr-1" />
+                    Site Logo URL
+                  </label>
+                  <input
+                    type="url"
+                    value={siteSettings.site_logo || ''}
+                    onChange={(e) => setSiteSettings({ ...siteSettings, site_logo: e.target.value })}
+                    disabled={!editingSettings}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50"
+                    placeholder="https://example.com/logo.png"
+                  />
+                  {siteSettings.site_logo && (
+                    <div className="mt-2">
+                      <img src={siteSettings.site_logo} alt="Site Logo" className="h-16 w-auto" />
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <SafeIcon icon={FiImage} className="w-4 h-4 inline mr-1" />
+                    Hero Background Image URL
+                  </label>
+                  <input
+                    type="url"
+                    value={siteSettings.hero_background_image || ''}
+                    onChange={(e) => setSiteSettings({ ...siteSettings, hero_background_image: e.target.value })}
+                    disabled={!editingSettings}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50"
+                    placeholder="https://example.com/hero-bg.jpg"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <SafeIcon icon={FiImage} className="w-4 h-4 inline mr-1" />
+                    Leadership Section Image URL
+                  </label>
+                  <input
+                    type="url"
+                    value={siteSettings.about_leadership_image || ''}
+                    onChange={(e) => setSiteSettings({ ...siteSettings, about_leadership_image: e.target.value })}
+                    disabled={!editingSettings}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50"
+                    placeholder="https://example.com/leadership.jpg"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <SafeIcon icon={FiImage} className="w-4 h-4 inline mr-1" />
+                    Why Join Us Section Image URL
+                  </label>
+                  <input
+                    type="url"
+                    value={siteSettings.why_join_us_image || ''}
+                    onChange={(e) => setSiteSettings({ ...siteSettings, why_join_us_image: e.target.value })}
+                    disabled={!editingSettings}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50"
+                    placeholder="https://example.com/team.jpg"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

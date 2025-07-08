@@ -1,11 +1,75 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
+import supabase from '../lib/supabase';
 
 const { FiUser, FiStar, FiTrendingUp, FiAward } = FiIcons;
 
 const AboutLeadership = () => {
+  const [content, setContent] = useState({
+    title: 'Meet Your Leader',
+    subtitle: 'Led by industry expert Jenny Rodriguez-Minchala, our team is committed to your success',
+    featured_image: 'https://images.unsplash.com/photo-1594736797933-d0d62a0a2fe2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80'
+  });
+
+  useEffect(() => {
+    const fetchContent = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('content_sections_xh9s4a')
+          .select('*')
+          .eq('section_name', 'leadership')
+          .single();
+
+        if (error) {
+          console.error('Error fetching leadership content:', error);
+          return;
+        }
+
+        if (data) {
+          setContent({
+            title: data.title || content.title,
+            subtitle: data.subtitle || content.subtitle,
+            featured_image: data.featured_image || content.featured_image
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching leadership content:', error);
+      }
+    };
+
+    fetchContent();
+
+    // Subscribe to real-time changes
+    const subscription = supabase
+      .channel('leadership_content_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'content_sections_xh9s4a',
+          filter: 'section_name=eq.leadership'
+        },
+        (payload) => {
+          console.log('Leadership content updated:', payload);
+          if (payload.new) {
+            setContent(prev => ({
+              title: payload.new.title || prev.title,
+              subtitle: payload.new.subtitle || prev.subtitle,
+              featured_image: payload.new.featured_image || prev.featured_image
+            }));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  }, []);
+
   return (
     <section className="py-20 bg-gradient-to-r from-blue-50 to-indigo-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -17,10 +81,10 @@ const AboutLeadership = () => {
           className="text-center mb-16"
         >
           <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
-            Meet Your Leader
+            {content.title}
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Led by industry expert Jenny Rodriguez-Minchala, our team is committed to your success
+            {content.subtitle}
           </p>
         </motion.div>
 
@@ -35,13 +99,13 @@ const AboutLeadership = () => {
           >
             <div className="relative">
               <img
-                src="https://images.unsplash.com/photo-1594736797933-d0d62a0a2fe2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80"
+                src={content.featured_image}
                 alt="Jenny Rodriguez-Minchala"
                 className="w-full h-96 lg:h-[500px] object-cover rounded-2xl shadow-2xl"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-blue-900/20 to-transparent rounded-2xl"></div>
             </div>
-            
+
             {/* Achievement Badge */}
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}

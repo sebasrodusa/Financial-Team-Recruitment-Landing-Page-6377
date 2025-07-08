@@ -1,11 +1,75 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
+import supabase from '../lib/supabase';
 
 const { FiAward, FiTarget, FiHeart, FiShield, FiBookOpen, FiDollarSign } = FiIcons;
 
 const WhyJoinUs = () => {
+  const [content, setContent] = useState({
+    title: 'Why Choose Prosperity Leaders?',
+    subtitle: 'Join a team that values growth, integrity, and success',
+    featured_image: 'https://images.unsplash.com/photo-1600880292203-757bb62b4baf?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80'
+  });
+
+  useEffect(() => {
+    const fetchContent = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('content_sections_xh9s4a')
+          .select('*')
+          .eq('section_name', 'benefits')
+          .single();
+
+        if (error) {
+          console.error('Error fetching benefits content:', error);
+          return;
+        }
+
+        if (data) {
+          setContent({
+            title: data.title || content.title,
+            subtitle: data.subtitle || content.subtitle,
+            featured_image: data.featured_image || content.featured_image
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching benefits content:', error);
+      }
+    };
+
+    fetchContent();
+
+    // Subscribe to real-time changes
+    const subscription = supabase
+      .channel('benefits_content_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'content_sections_xh9s4a',
+          filter: 'section_name=eq.benefits'
+        },
+        (payload) => {
+          console.log('Benefits content updated:', payload);
+          if (payload.new) {
+            setContent(prev => ({
+              title: payload.new.title || prev.title,
+              subtitle: payload.new.subtitle || prev.subtitle,
+              featured_image: payload.new.featured_image || prev.featured_image
+            }));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
+  }, []);
+
   const benefits = [
     {
       icon: FiAward,
@@ -51,10 +115,11 @@ const WhyJoinUs = () => {
             transition={{ duration: 0.8 }}
           >
             <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-8">
-              Why Choose 
-              <span className="text-blue-600"> Prosperity Leaders?</span>
+              {content.title.split(' ').slice(0, 2).join(' ')}{' '}
+              <span className="text-blue-600">
+                {content.title.split(' ').slice(2).join(' ')}
+              </span>
             </h2>
-            
             <div className="space-y-6">
               {benefits.map((benefit, index) => (
                 <motion.div
@@ -90,11 +155,11 @@ const WhyJoinUs = () => {
             className="relative"
           >
             <img
-              src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
+              src={content.featured_image}
               alt="Team collaboration"
               className="w-full h-96 lg:h-[500px] object-cover rounded-2xl shadow-2xl"
             />
-            
+
             {/* Floating Achievement Card */}
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}

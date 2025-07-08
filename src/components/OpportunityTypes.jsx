@@ -21,30 +21,39 @@ const OpportunityTypes = () => {
           .eq('section_name', 'opportunities')
           .single();
 
-        if (sectionError) throw sectionError;
+        if (sectionError) {
+          console.error('Error fetching opportunities section:', sectionError);
+          return;
+        }
 
-        // Fetch section items
-        const { data: itemsData, error: itemsError } = await supabase
-          .from('section_items_xh9s4a')
-          .select('*')
-          .eq('section_id', sectionData.id)
-          .order('order_index');
+        let processedItems = [];
+        
+        if (sectionData) {
+          // Fetch section items
+          const { data: itemsData, error: itemsError } = await supabase
+            .from('section_items_xh9s4a')
+            .select('*')
+            .eq('section_id', sectionData.id)
+            .order('order_index');
 
-        if (itemsError) throw itemsError;
+          if (itemsError) {
+            console.error('Error fetching opportunity items:', itemsError);
+          } else if (itemsData) {
+            // Process items to match the expected format
+            processedItems = itemsData.map(item => ({
+              icon: FiIcons[`Fi${item.icon_name}`] || FiIcons.FiClock,
+              title: item.title,
+              description: item.description,
+              features: [] // We could add features as a JSON field in the database if needed
+            }));
+          }
 
-        // Process items to match the expected format
-        const processedItems = itemsData.map(item => ({
-          icon: FiIcons[`Fi${item.icon_name}`],
-          title: item.title,
-          description: item.description,
-          features: [] // We could add features as a JSON field in the database if needed
-        }));
-
-        setContent({
-          title: sectionData.title,
-          subtitle: sectionData.subtitle,
-          items: processedItems
-        });
+          setContent({
+            title: sectionData.title || content.title,
+            subtitle: sectionData.subtitle || content.subtitle,
+            items: processedItems
+          });
+        }
       } catch (error) {
         console.error('Error fetching opportunity types:', error);
       }
@@ -52,20 +61,38 @@ const OpportunityTypes = () => {
 
     fetchContent();
 
-    // Subscribe to changes
+    // Subscribe to section changes
     const sectionSubscription = supabase
       .channel('opportunities_section_changes')
-      .on('postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'content_sections_xh9s4a', filter: 'section_name=eq.opportunities' },
-        () => fetchContent()
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'content_sections_xh9s4a',
+          filter: 'section_name=eq.opportunities'
+        },
+        () => {
+          console.log('Opportunities section changed, refetching...');
+          fetchContent();
+        }
       )
       .subscribe();
 
+    // Subscribe to items changes
     const itemsSubscription = supabase
       .channel('opportunities_items_changes')
-      .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'section_items_xh9s4a' },
-        () => fetchContent()
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'section_items_xh9s4a'
+        },
+        () => {
+          console.log('Opportunities items changed, refetching...');
+          fetchContent();
+        }
       )
       .subscribe();
 
@@ -160,15 +187,12 @@ const OpportunityTypes = () => {
               <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mb-6">
                 <SafeIcon icon={opportunity.icon} className="w-8 h-8 text-blue-600" />
               </div>
-              
               <h3 className="text-2xl font-bold text-gray-900 mb-4">
                 {opportunity.title}
               </h3>
-              
               <p className="text-gray-600 mb-6">
                 {opportunity.description}
               </p>
-              
               <ul className="space-y-3">
                 {opportunity.features && opportunity.features.map((feature, featureIndex) => (
                   <li key={featureIndex} className="flex items-center text-sm text-gray-700">
